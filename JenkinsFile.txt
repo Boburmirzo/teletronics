@@ -1,0 +1,32 @@
+node {
+  
+  def mvnHome
+  def registry = "Boburmirzo/teletronics"
+  def registryCredential = 'dockerhub'
+  def dockerImage = ''
+  
+    stage('Clone the Project') { // for display purposes
+      // Get some code from a GitHub repository
+      git 'https://github.com/Boburmirzo/teletronics.git'
+      mvnHome = tool 'M2_HOME'
+   }
+   stage('Build') {
+      // Run the maven build
+      if (isUnix()) {
+         sh "'${mvnHome}/bin/mvn' -Dmaven.test.failure.ignore clean package"
+      } else {
+         bat(/"${mvnHome}\bin\mvn" -Dmaven.test.failure.ignore clean package/)
+      }
+   }
+      stage('Push Image') {
+          script {
+            docker.withRegistry( '', registryCredential ) {
+            bat "docker push Boburmirzo/teletronics"
+        }
+      }
+      }
+   stage('Results') {
+      junit '**/target/surefire-reports/TEST-*.xml'
+      archive 'target/*.jar'
+   }
+}
